@@ -220,4 +220,6 @@ async def speech_to_text(file: UploadFile = File(...)):
         print(f"STT Error: {e}")
         raise HTTPException(status_code=500, detail="Lỗi khi xử lý âm thanh")
 
-# Chạy server: uvicorn main:app --reload
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 5001)))
