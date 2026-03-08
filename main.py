@@ -7,7 +7,6 @@ from typing import List
 from datetime import datetime, timezone
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
-from transformers import pipeline
 
 # Load API Key
 load_dotenv()
@@ -181,40 +180,34 @@ async def generate_description(request: GenRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- KHỞI TẠO MODEL STT (Load 1 lần khi chạy server) ---
-print("Đang tải model PhoWhisper... Vui lòng đợi...")
-stt_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-medium")
-print("Tải model thành công!")
-
-
 @app.post("/stt")
 async def speech_to_text(file: UploadFile = File(...)):
-    # 1. Kiểm tra định dạng file (hỗ trợ .wav, .mp3, .flac, .ogg)
-    allowed_extensions = ["wav", "mp3", "flac", "ogg"]
+    # 1. Kiểm tra định dạng file
+    allowed_extensions = ["wav", "mp3", "flac", "ogg", "m4a", "webm", "mp4", "mpeg", "mpga"]
     file_ext = file.filename.split(".")[-1].lower()
 
     if file_ext not in allowed_extensions:
         raise HTTPException(status_code=400,
-                            detail="Định dạng file không được hỗ trợ. Chỉ hỗ trợ .wav, .mp3, .flac, .ogg")
+                            detail=f"Định dạng file không được hỗ trợ. Chỉ hỗ trợ: {', '.join(allowed_extensions)}")
 
-    # 2. Lưu file audio tạm thời xuống ổ đĩa để đưa vào model
+    # 2. Lưu file audio tạm thời
     temp_file_path = f"temp_{file.filename}"
     try:
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # 3. Tích hợp model PhoWhisper tại đây
-        result = stt_pipeline(temp_file_path)
-        generated_text = result["text"]
-
-        # 4. Xóa file tạm sau khi xử lý xong
+        # 3. Gọi OpenAI Whisper API
+        with open(temp_file_path, "rb") as audio_file:
+            transcription = await client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+            )
+        # 4. Xóa file tạm
         os.remove(temp_file_path)
 
-        # Trả về response đúng định dạng
-        return {"data": generated_text}
+        return {"data": transcription.text}
 
     except Exception as e:
-        # Nhớ xóa file tạm nếu có lỗi xảy ra
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         print(f"STT Error: {e}")
