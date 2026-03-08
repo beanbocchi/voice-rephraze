@@ -199,7 +199,7 @@ async def speech_to_text(file: UploadFile = File(...)):
         # 3. Gọi OpenAI Whisper API
         with open(temp_file_path, "rb") as audio_file:
             transcription = await client.audio.transcriptions.create(
-                model="whisper-1",
+                model="gpt-4o-transcribe",
                 file=audio_file,
             )
         # 4. Xóa file tạm
