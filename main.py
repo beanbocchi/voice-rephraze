@@ -183,7 +183,7 @@ async def generate_description(request: GenRequest):
 
 # --- KHỞI TẠO MODEL STT (Load 1 lần khi chạy server) ---
 print("Đang tải model PhoWhisper... Vui lòng đợi...")
-stt_pipeline = pipeline("automatic-speech-recognition", model="vinai/PhoWhisper-tiny")
+stt_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-medium")
 print("Tải model thành công!")
 
 
